@@ -1,7 +1,17 @@
 <odoo>
-    <data>
+    <!-- semua security record dibuat no-update supaya tidak terjadi konflik saat upgrade -->
+    <data noupdate="1">
+
+        <!-- Group untuk akses modul STT Billing -->
         <record id="group_lp_billing_user" model="res.groups">
             <field name="name">STT Billing User</field>
         </record>
+
+        <!-- Model untuk wizard import STT -->
+        <record id="model_lp_import_stt_wizard" model="ir.model">
+            <field name="name">lp.import.stt.wizard</field>
+            <field name="model">lp.import.stt.wizard</field>
+        </record>
+
     </data>
 </odoo>

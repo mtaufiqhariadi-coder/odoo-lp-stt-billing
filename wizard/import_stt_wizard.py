@@ -9,98 +9,120 @@ from odoo.exceptions import ValidationError
 
 class ImportSttWizard(models.TransientModel):
     _name = "lp.import.stt.wizard"
-    _description = "Wizard untuk Import File STT (CSV)"
+    _description = "Wizard untuk import CSV STT"
 
-    data_file = fields.Binary(string="CSV File", required=True)
-    filename = fields.Char(string="Filename")
-
-    def _parse_date(self, s):
-        # support beberapa format paling umum
-        for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%Y/%m/%d", "%d/%m/%Y"):
-            try:
-                return datetime.strptime(s, fmt).date()
-            except Exception:
-                continue
-        # kalau gagal, biarkan Odoo throw error saat create (atau return None)
-        return None
+    data_file = fields.Binary("CSV File", required=True)
+    filename = fields.Char("Filename")
 
     def action_import_stt(self):
-        if not self.filename:
-            raise ValidationError("Nama file tidak boleh kosong.")
-        if not self.filename.lower().endswith(".csv"):
-            raise ValidationError("Format file harus CSV.")
+        # cek extension file untuk memastikan user tidak salah upload
+        if not self.filename or not self.filename.lower().endswith(".csv"):
+            raise ValidationError("File harus dalam format CSV.")
 
-        # decode file bytes -> text
+        # decode file biner jadi text.
+        # pakai utf-8-sig supaya karakter BOM di awal file tidak mengganggu header.
         try:
             file_content = base64.b64decode(self.data_file)
-            text = file_content.decode("utf-8")
-        except Exception as e:
-            raise ValidationError(f"Gagal membaca file: {e}")
+            text = file_content.decode("utf-8-sig")
+        except Exception:
+            raise ValidationError("File tidak bisa dibaca. Pastikan format CSV valid.")
 
-        reader = csv.DictReader(StringIO(text))
+        # beberapa file CSV dari vendor bisa pakai delimiter yang berbeda.
+        # di sini coba deteksi otomatis, kalau gagal default ke koma.
+        try:
+            sample = text.splitlines()[0]
+            dialect = csv.Sniffer().sniff(sample)
+            delimiter = dialect.delimiter
+        except Exception:
+            delimiter = ","
+
+        reader = csv.DictReader(StringIO(text), delimiter=delimiter)
+
         aggregated = {}
-        # key = (date_str, client_code)
 
-        for i, row in enumerate(reader, start=1):
-            # skip row kosong atau tidak lengkap sesuai soal
-            date_raw = (row.get("date") or row.get("Date") or "").strip()
-            client = (row.get("client_code") or row.get("client") or row.get("Client") or "").strip()
-            client_type = (row.get("client_type") or row.get("clientType") or "").strip().upper()
-            amount_raw = (row.get("amount") or row.get("Amount") or "0").strip()
+        for row in reader:
+            # beberapa file punya header/value dengan spasi atau karakter aneh.
+            # disini dibersihkan supaya akses key lebih konsisten.
+            clean = {
+                (k.strip() if k else ""): (v.strip() if v else "")
+                for k, v in row.items()
+            }
 
+            # ambil kolom sesuai format STT1/STT2
+            date_raw = clean.get("date")
+            client = clean.get("client_code")
+            amount_raw = clean.get("amount")
+            client_type = clean.get("client_type", "").upper()
+
+            # baris dengan data kosong dilewati saja
             if not date_raw or not client or not client_type:
-                # skip baris yang tidak lengkap (sama seperti soal)
                 continue
 
-            # try parse amount
+            # parsing tanggal: file dari soal ada yang pakai format mm/dd/yyyy
+            # sementara ada file lain yang sudah yyyy-mm-dd.
+            dt = None
+            for fmt in ("%Y-%m-%d", "%m/%d/%Y"):
+                try:
+                    dt = datetime.strptime(date_raw, fmt).date()
+                    break
+                except Exception:
+                    pass
+
+            if not dt:
+                # fallback jika user upload format tanggal lain.
+                raise ValidationError(f"Format tanggal tidak dikenali: {date_raw}")
+
+            # parse amount. kalau gagal, nilai diset 0.
             try:
-                amount = float(amount_raw) if amount_raw else 0.0
+                amount = float(amount_raw)
             except Exception:
                 amount = 0.0
 
-            # konsistenkan tanggal untuk keying; kita simpan string YYYY-MM-DD
-            parsed_date = self._parse_date(date_raw)
-            if parsed_date:
-                date_key = parsed_date.isoformat()
-            else:
-                # kalau format aneh, pakai apa adanya (tapi lebih aman pakai iso)
-                date_key = date_raw
-
-            key = (date_key, client)
+            # key agregasi berdasarkan tanggal + client
+            key = (dt.isoformat(), client)
 
             if key not in aggregated:
-                aggregated[key] = {"stt_count": 0, "debit": 0.0, "credit": 0.0}
+                aggregated[key] = {
+                    "stt_count": 0,
+                    "debit": 0.0,
+                    "credit": 0.0,
+                }
 
             aggregated[key]["stt_count"] += 1
 
+            # aturan dari soal:
+            # - client_type C masuk ke debit
+            # - client_type V masuk ke credit
             if client_type == "C":
                 aggregated[key]["debit"] += amount
             elif client_type == "V":
                 aggregated[key]["credit"] += amount
-            else:
-                # unknown type: skip contribution to debit/credit but still count STT
-                continue
 
         Billing = self.env["lp.stt.billing"]
 
+        # simpan hasil agregasi ke model utama
         for (date_str, client_code), vals in aggregated.items():
-            # cari existing, kalau ada replace (menurut aturan STT2 override STT1)
-            existing = Billing.search([("date", "=", date_str), ("client_code", "=", client_code)], limit=1)
-            vals_write = {
+            existing = Billing.search([
+                ("date", "=", date_str),
+                ("client_code", "=", client_code)
+            ], limit=1)
+
+            record_values = {
+                "date": date_str,
+                "client_code": client_code,
                 "stt_count": vals["stt_count"],
                 "debit": vals["debit"],
                 "credit": vals["credit"],
-                "processed_from_file": self.filename,
+                "processed_from_file": self.filename
             }
-            if existing:
-                existing.write(vals_write)
-            else:
-                Billing.create({
-                    "date": date_str,
-                    "client_code": client_code,
-                    **vals_write
-                })
 
+            # jika record sudah ada, replace nilai lama (logika override STT2)
+            if existing:
+                existing.write(record_values)
+            else:
+                Billing.create(record_values)
+
+        # reload tampilan supaya user langsung melihat hasil import
         return {
             "type": "ir.actions.client",
             "tag": "reload",

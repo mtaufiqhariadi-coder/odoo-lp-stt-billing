@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_lp_stt_billing_user,lp_stt_billing_user,model_lp_stt_billing,group_lp_billing_user,1,1,1,1
+access_lp_import_stt_wizard,lp_import_stt_wizard,model_lp_import_stt_wizard,group_lp_billing_user,1,1,1,1
