@@ -18,6 +18,7 @@ yang umumnya dihasilkan dari proses pipeline (misalnya Airflow).
     "views/import_stt_wizard.xml",
     "views/menu.xml",
     ],
+    "demo": ["demo/stt_sample.csv"],
     "installable": True,
     "application": True,
 }
