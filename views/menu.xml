@@ -2,4 +2,6 @@
     <menuitem id="lp_main_menu" name="Lion Parcel" sequence="10"/>
     <menuitem id="lp_billing_menu" name="STT Billing" parent="lp_main_menu" sequence="20"/>
     <menuitem id="lp_billing_menu_items" name="Billing Data" parent="lp_billing_menu" action="lp_stt_billing_action" sequence="30"/>
+    <menuitem id="lp_import_stt_menu" name="Import STT CSV" parent="lp_billing_menu" action="lp_import_stt_wizard_action" sequence="40"
+    />
 </odoo>

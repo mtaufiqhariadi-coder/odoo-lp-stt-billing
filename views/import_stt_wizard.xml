@@ -1,0 +1,32 @@
+<odoo>
+    <record id="lp_import_stt_wizard_form" model="ir.ui.view">
+        <field name="name">lp.import.stt.wizard.form</field>
+        <field name="model">lp.import.stt.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import STT CSV">
+                <sheet>
+                    <group>
+                        <field name="data_file"/>
+                        <field name="filename"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_import_stt"
+                            string="Import"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="lp_import_stt_wizard_action" model="ir.actions.act_window">
+        <field name="name">Import STT CSV</field>
+        <field name="res_model">lp.import.stt.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
