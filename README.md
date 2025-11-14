@@ -1,13 +1,19 @@
 # Lion Parcel - STT Billing
 
-Modul ini saya buat sebagai latihan untuk memahami cara kerja Odoo dari sisi backend.
-Contoh datanya saya sesuaikan dengan kasus real di Lion Parcel, yaitu data billing hasil
-olah STT yang biasanya digabung dari beberapa file (misalnya STT1 & STT2).
+Modul kecil untuk menyimpan hasil perhitungan billing STT. 
+Modul ini saya buat sebagai bagian dari technical test, tetapi saya sesuaikan dengan 
+use case yang lebih dekat ke dunia logistik (khususnya proses STT).
 
-Modul ini hanya menyimpan data ringkasnya saja:
-- tanggal
-- client code
-- jumlah STT
-- nominal debit / credit
+### Fitur utama:
+- Model `lp.stt.billing` untuk menyimpan agregasi per tanggal dan client.
+- Wizard untuk import CSV STT (mirip penggabungan STT1 & STT2).
+- Data otomatis mengelompok berdasarkan:
+  - tanggal
+  - client_code
+  - debit/credit dihitung dari client_type
+- Jika file kedua mengandung data yang sama → otomatis overwrite (sesuai instruksi test).
+- Tersedia menu billing dan menu import.
+- Sudah mendukung pencarian berdasarkan tanggal, client, dan asal file.
 
-Tujuan modul ini lebih ke latihan CRUD, security, dan pembuatan menu sederhana.
+Modul ini saya buat supaya orang lain yang baca bisa langsung paham alurnya,
+dan mudah dites secara lokal.

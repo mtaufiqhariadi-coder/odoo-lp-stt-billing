@@ -35,9 +35,26 @@
         </field>
     </record>
 
+    <record id="lp_stt_billing_search" model="ir.ui.view">
+    <field name="name">lp.stt.billing.search</field>
+    <field name="model">lp.stt.billing</field>
+    <field name="arch" type="xml">
+        <search>
+            <field name="date"/>
+            <field name="client_code"/>
+            <field name="processed_from_file"/>
+
+            <filter string="Debit > 0" name="debit_filter" domain="[('debit','>',0)]"/>
+            <filter string="Credit > 0" name="credit_filter" domain="[('credit','>',0)]"/>
+        </search>
+    </field>
+    </record>
+
+
     <record id="lp_stt_billing_action" model="ir.actions.act_window">
         <field name="name">Billing Data</field>
         <field name="res_model">lp.stt.billing</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="lp_stt_billing_search"/>
     </record>
 </odoo>
