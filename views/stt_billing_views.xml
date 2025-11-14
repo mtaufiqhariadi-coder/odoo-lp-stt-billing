@@ -1,0 +1,39 @@
+<odoo>
+    <record id="lp_stt_billing_view_tree" model="ir.ui.view">
+        <field name="name">lp.stt.billing.tree</field>
+        <field name="model">lp.stt.billing</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="date"/>
+                <field name="client_code"/>
+                <field name="stt_count"/>
+                <field name="debit"/>
+                <field name="credit"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="lp_stt_billing_view_form" model="ir.ui.view">
+        <field name="name">lp.stt.billing.form</field>
+        <field name="model">lp.stt.billing</field>
+        <field name="arch" type="xml">
+            <form string="Billing Detail">
+                <sheet>
+                    <group>
+                        <field name="date"/>
+                        <field name="client_code"/>
+                        <field name="stt_count"/>
+                        <field name="debit"/>
+                        <field name="credit"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="lp_stt_billing_action" model="ir.actions.act_window">
+        <field name="name">Billing Data</field>
+        <field name="res_model">lp.stt.billing</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
