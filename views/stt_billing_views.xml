@@ -6,9 +6,11 @@
             <tree>
                 <field name="date"/>
                 <field name="client_code"/>
+                <field name="processed_from_file"/>
                 <field name="stt_count"/>
                 <field name="debit"/>
                 <field name="credit"/>
+                <field name="total_amount"/>
             </tree>
         </field>
     </record>
@@ -22,9 +24,11 @@
                     <group>
                         <field name="date"/>
                         <field name="client_code"/>
+                        <field name="processed_from_file"/>
                         <field name="stt_count"/>
                         <field name="debit"/>
                         <field name="credit"/>
+                        <field name="total_amount" readonly="1"/>
                     </group>
                 </sheet>
             </form>
